@@ -22,50 +22,9 @@ interface Post {
 
 const REACTION_SET = ['🔥', '😂', '😍', '🤯', '👏'];
 
-const initialPosts: Post[] = [
-  {
-    id: 1,
-    author: 'Нова Стар',
-    handle: '@nova',
-    avatar: 'https://i.pravatar.cc/150?img=47',
-    time: '2 мин',
-    text: 'Запустила свой первый пет-проект в открытый космос идей. Ощущение — будто вышла в открытый космос без скафандра 🚀',
-    image: 'https://cdn.poehali.dev/projects/efc5c180-a6af-4d45-a055-747a0f1efc1c/files/444643e2-558e-4196-bc70-4492eb72ea53.jpg',
-    liked: false,
-    likes: 128,
-    reactions: { '🔥': 24, '😍': 12 },
-  },
-  {
-    id: 2,
-    author: 'Марк Орбита',
-    handle: '@orbit',
-    avatar: 'https://i.pravatar.cc/150?img=12',
-    time: '18 мин',
-    text: 'Ночь. Кофе. Код. Идеальное сочетание для тех, кто строит будущее ✨',
-    image: 'https://cdn.poehali.dev/projects/efc5c180-a6af-4d45-a055-747a0f1efc1c/files/b8eda316-a833-45d2-9a84-ad5bc06ecee5.jpg',
-    liked: true,
-    likes: 341,
-    reactions: { '🔥': 56, '👏': 30, '🤯': 8 },
-    myReaction: '🔥',
-  },
-  {
-    id: 3,
-    author: 'Лия Ветер',
-    handle: '@lia',
-    avatar: 'https://i.pravatar.cc/150?img=32',
-    time: '1 ч',
-    text: 'Соцсеть без регистрации — это как вечеринка, куда можно зайти сразу. Никаких паролей, только вайб 💫',
-    liked: false,
-    likes: 87,
-    reactions: { '😂': 15 },
-  },
-];
+const initialPosts: Post[] = [];
 
-const suggestions = [
-  { name: 'Космо Дев', handle: '@cosmo', avatar: 'https://i.pravatar.cc/150?img=5' },
-  { name: 'Айра Нуар', handle: '@aira', avatar: 'https://i.pravatar.cc/150?img=25' },
-  { name: 'Тео Пульс', handle: '@teo', avatar: 'https://i.pravatar.cc/150?img=15' },
-];
+const suggestions: { name: string; handle: string; avatar: string }[] = [];
 
 interface Friend {
   name: string;
@@ -75,13 +34,7 @@ interface Friend {
   mutual: number;
 }
 
-const initialFriends: Friend[] = [
-  { name: 'Нова Стар', handle: '@nova', avatar: 'https://i.pravatar.cc/150?img=47', status: 'friend', mutual: 12 },
-  { name: 'Марк Орбита', handle: '@orbit', avatar: 'https://i.pravatar.cc/150?img=12', status: 'friend', mutual: 8 },
-  { name: 'Лия Ветер', handle: '@lia', avatar: 'https://i.pravatar.cc/150?img=32', status: 'friend', mutual: 5 },
-  { name: 'Космо Дев', handle: '@cosmo', avatar: 'https://i.pravatar.cc/150?img=5', status: 'request', mutual: 3 },
-  { name: 'Айра Нуар', handle: '@aira', avatar: 'https://i.pravatar.cc/150?img=25', status: 'request', mutual: 1 },
-];
+const initialFriends: Friend[] = [];
 
 const Index = () => {
   const [tab, setTab] = useState<'feed' | 'search' | 'friends' | 'profile'>('feed');
