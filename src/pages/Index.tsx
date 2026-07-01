@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/icon';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
@@ -20,11 +20,28 @@ interface Post {
   myReaction?: string;
 }
 
+interface UserProfile {
+  name: string;
+  handle: string;
+  avatar: string;
+}
+
 const REACTION_SET = ['🔥', '😂', '😍', '🤯', '👏'];
 
-const initialPosts: Post[] = [];
-
-const suggestions: { name: string; handle: string; avatar: string }[] = [];
+const AVATAR_OPTIONS = [
+  'https://i.pravatar.cc/150?img=1',
+  'https://i.pravatar.cc/150?img=3',
+  'https://i.pravatar.cc/150?img=5',
+  'https://i.pravatar.cc/150?img=7',
+  'https://i.pravatar.cc/150?img=9',
+  'https://i.pravatar.cc/150?img=11',
+  'https://i.pravatar.cc/150?img=20',
+  'https://i.pravatar.cc/150?img=25',
+  'https://i.pravatar.cc/150?img=30',
+  'https://i.pravatar.cc/150?img=36',
+  'https://i.pravatar.cc/150?img=44',
+  'https://i.pravatar.cc/150?img=50',
+];
 
 interface Friend {
   name: string;
@@ -34,15 +51,120 @@ interface Friend {
   mutual: number;
 }
 
-const initialFriends: Friend[] = [];
+// --- Onboarding Screen ---
+const OnboardingScreen = ({ onDone }: { onDone: (profile: UserProfile) => void }) => {
+  const [step, setStep] = useState<'name' | 'avatar'>('name');
+  const [name, setName] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState('');
 
+  const handleNameNext = () => {
+    if (!name.trim()) return;
+    setStep('avatar');
+  };
+
+  const handleFinish = () => {
+    if (!selectedAvatar) return;
+    const handle = '@' + name.trim().toLowerCase().replace(/\s+/g, '_');
+    onDone({ name: name.trim(), handle, avatar: selectedAvatar });
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center px-6">
+      {/* Logo */}
+      <h1 className="font-display text-4xl font-extrabold mb-2 story-link">nebula</h1>
+      <p className="text-muted-foreground text-sm mb-10">соцсеть без регистрации</p>
+
+      <div className="w-full max-w-sm animate-fade-up">
+        {step === 'name' && (
+          <div className="rounded-3xl border border-border bg-card p-8 space-y-6">
+            <div className="space-y-1">
+              <h2 className="font-display text-xl font-bold">Как тебя зовут?</h2>
+              <p className="text-sm text-muted-foreground">Это имя увидят другие пользователи</p>
+            </div>
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleNameNext()}
+              placeholder="Твоё имя или никнейм"
+              maxLength={30}
+              className="w-full bg-secondary rounded-2xl px-4 py-3 text-base outline-none border border-border focus:border-primary transition-colors placeholder:text-muted-foreground"
+            />
+            <Button
+              onClick={handleNameNext}
+              disabled={!name.trim()}
+              className="w-full rounded-full font-semibold h-12 disabled:opacity-40"
+            >
+              Далее
+            </Button>
+          </div>
+        )}
+
+        {step === 'avatar' && (
+          <div className="rounded-3xl border border-border bg-card p-8 space-y-6">
+            <div className="space-y-1">
+              <button onClick={() => setStep('name')} className="text-muted-foreground text-sm flex items-center gap-1 mb-3 hover:text-foreground transition-colors">
+                <Icon name="ChevronLeft" size={16} /> Назад
+              </button>
+              <h2 className="font-display text-xl font-bold">Выбери аватар</h2>
+              <p className="text-sm text-muted-foreground">Можно сменить позже в профиле</p>
+            </div>
+
+            <div className="grid grid-cols-4 gap-3">
+              {AVATAR_OPTIONS.map((url) => (
+                <button
+                  key={url}
+                  onClick={() => setSelectedAvatar(url)}
+                  className={`relative rounded-2xl overflow-hidden transition-all ${
+                    selectedAvatar === url
+                      ? 'ring-2 ring-accent scale-105'
+                      : 'opacity-70 hover:opacity-100'
+                  }`}
+                >
+                  <img src={url} alt="" className="w-full aspect-square object-cover" />
+                  {selectedAvatar === url && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-accent/20">
+                      <Icon name="Check" size={20} className="text-accent" />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <Button
+              onClick={handleFinish}
+              disabled={!selectedAvatar}
+              className="w-full rounded-full font-semibold h-12 disabled:opacity-40"
+            >
+              Войти в nebula 🚀
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- Main App ---
 const Index = () => {
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [tab, setTab] = useState<'feed' | 'search' | 'friends' | 'profile'>('feed');
-  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
   const [openReactions, setOpenReactions] = useState<number | null>(null);
-  const [friends, setFriends] = useState<Friend[]>(initialFriends);
+  const [friends, setFriends] = useState<Friend[]>([]);
+
+  // Restore from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('nebula_user');
+    if (saved) setUser(JSON.parse(saved));
+  }, []);
+
+  const handleOnboarding = (profile: UserProfile) => {
+    localStorage.setItem('nebula_user', JSON.stringify(profile));
+    setUser(profile);
+  };
 
   const acceptFriend = (handle: string) => {
     setFriends((prev) => prev.map((f) => (f.handle === handle ? { ...f, status: 'friend' } : f)));
@@ -54,9 +176,7 @@ const Index = () => {
   const toggleLike = (id: number) => {
     setPosts((prev) =>
       prev.map((p) =>
-        p.id === id
-          ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 }
-          : p,
+        p.id === id ? { ...p, liked: !p.liked, likes: p.liked ? p.likes - 1 : p.likes + 1 } : p,
       ),
     );
   };
@@ -81,13 +201,13 @@ const Index = () => {
   };
 
   const publish = () => {
-    if (!draft.trim()) return;
+    if (!draft.trim() || !user) return;
     setPosts((prev) => [
       {
         id: Date.now(),
-        author: 'Вы',
-        handle: '@me',
-        avatar: 'https://i.pravatar.cc/150?img=68',
+        author: user.name,
+        handle: user.handle,
+        avatar: user.avatar,
         time: 'сейчас',
         text: draft.trim(),
         liked: false,
@@ -108,6 +228,8 @@ const Index = () => {
       )
     : posts;
 
+  if (!user) return <OnboardingScreen onDone={handleOnboarding} />;
+
   return (
     <div className="min-h-screen text-foreground">
       {/* Header */}
@@ -119,8 +241,8 @@ const Index = () => {
           <div className="flex items-center gap-2 text-muted-foreground">
             <Icon name="Bell" size={20} />
             <Avatar className="h-8 w-8 ring-2 ring-primary/50">
-              <AvatarImage src="https://i.pravatar.cc/150?img=68" />
-              <AvatarFallback>Я</AvatarFallback>
+              <AvatarImage src={user.avatar} />
+              <AvatarFallback>{user.name[0]}</AvatarFallback>
             </Avatar>
           </div>
         </div>
@@ -130,12 +252,11 @@ const Index = () => {
         {/* FEED */}
         {tab === 'feed' && (
           <div className="space-y-5">
-            {/* Composer */}
             <div className="rounded-3xl border border-border bg-card p-4 animate-fade-up">
               <div className="flex gap-3">
                 <Avatar className="h-10 w-10 shrink-0">
-                  <AvatarImage src="https://i.pravatar.cc/150?img=68" />
-                  <AvatarFallback>Я</AvatarFallback>
+                  <AvatarImage src={user.avatar} />
+                  <AvatarFallback>{user.name[0]}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <Textarea
@@ -162,6 +283,14 @@ const Index = () => {
               </div>
             </div>
 
+            {posts.length === 0 && (
+              <div className="text-center py-16 text-muted-foreground animate-fade-up">
+                <p className="text-4xl mb-3">🌌</p>
+                <p className="font-semibold">Лента пока пуста</p>
+                <p className="text-sm mt-1">Будь первым — напиши что-нибудь!</p>
+              </div>
+            )}
+
             {filtered.map((post, i) => (
               <PostCard
                 key={post.id}
@@ -184,7 +313,7 @@ const Index = () => {
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Поиск людей и постов"
+                placeholder="Поиск постов"
                 className="flex-1 bg-transparent outline-none text-base"
               />
               {query && (
@@ -193,46 +322,28 @@ const Index = () => {
             </div>
 
             {!query && (
-              <div>
-                <p className="text-sm font-semibold text-muted-foreground mb-3 px-1">Кого почитать</p>
-                <div className="space-y-2">
-                  {suggestions.map((s) => (
-                    <div key={s.handle} className="flex items-center justify-between rounded-2xl border border-border bg-card p-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-11 w-11">
-                          <AvatarImage src={s.avatar} />
-                          <AvatarFallback>{s.name[0]}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-semibold leading-tight">{s.name}</p>
-                          <p className="text-sm text-muted-foreground">{s.handle}</p>
-                        </div>
-                      </div>
-                      <Button variant="secondary" className="rounded-full font-semibold">Читать</Button>
-                    </div>
-                  ))}
-                </div>
+              <div className="text-center py-16 text-muted-foreground">
+                <p className="text-4xl mb-3">🔍</p>
+                <p className="font-semibold">Введи запрос</p>
+                <p className="text-sm mt-1">Поиск по постам и авторам</p>
               </div>
             )}
 
-            {query && (
-              <div className="space-y-5">
-                {filtered.length === 0 && (
-                  <p className="text-center text-muted-foreground py-10">Ничего не найдено по «{query}»</p>
-                )}
-                {filtered.map((post, i) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    index={i}
-                    onLike={toggleLike}
-                    onReaction={setReaction}
-                    openReactions={openReactions}
-                    setOpenReactions={setOpenReactions}
-                  />
-                ))}
-              </div>
+            {query && filtered.length === 0 && (
+              <p className="text-center text-muted-foreground py-10">Ничего не найдено по «{query}»</p>
             )}
+
+            {query && filtered.map((post, i) => (
+              <PostCard
+                key={post.id}
+                post={post}
+                index={i}
+                onLike={toggleLike}
+                onReaction={setReaction}
+                openReactions={openReactions}
+                setOpenReactions={setOpenReactions}
+              />
+            ))}
           </div>
         )}
 
@@ -242,7 +353,7 @@ const Index = () => {
             {friends.some((f) => f.status === 'request') && (
               <div>
                 <p className="text-sm font-semibold text-muted-foreground mb-3 px-1">
-                  Заявки в друзья · {friends.filter((f) => f.status === 'request').length}
+                  Заявки · {friends.filter((f) => f.status === 'request').length}
                 </p>
                 <div className="space-y-2">
                   {friends.filter((f) => f.status === 'request').map((f) => (
@@ -271,12 +382,16 @@ const Index = () => {
 
             <div>
               <p className="text-sm font-semibold text-muted-foreground mb-3 px-1">
-                Мои друзья · {friends.filter((f) => f.status === 'friend').length}
+                Друзья · {friends.filter((f) => f.status === 'friend').length}
               </p>
+              {friends.filter((f) => f.status === 'friend').length === 0 && (
+                <div className="text-center py-16 text-muted-foreground">
+                  <p className="text-4xl mb-3">👥</p>
+                  <p className="font-semibold">Пока нет друзей</p>
+                  <p className="text-sm mt-1">Найди людей через поиск</p>
+                </div>
+              )}
               <div className="space-y-2">
-                {friends.filter((f) => f.status === 'friend').length === 0 && (
-                  <p className="text-center text-muted-foreground py-10">Пока нет друзей. Добавьте кого-нибудь!</p>
-                )}
                 {friends.filter((f) => f.status === 'friend').map((f) => (
                   <div key={f.handle} className="flex items-center justify-between rounded-2xl border border-border bg-card p-3">
                     <div className="flex items-center gap-3">
@@ -306,33 +421,42 @@ const Index = () => {
               <div className="h-32 bg-gradient-to-r from-primary/60 via-accent/40 to-primary/60" />
               <div className="px-5 pb-5 bg-card">
                 <Avatar className="h-24 w-24 -mt-12 ring-4 ring-card glow">
-                  <AvatarImage src="https://i.pravatar.cc/150?img=68" />
-                  <AvatarFallback>Я</AvatarFallback>
+                  <AvatarImage src={user.avatar} />
+                  <AvatarFallback>{user.name[0]}</AvatarFallback>
                 </Avatar>
                 <div className="mt-3 flex items-start justify-between">
                   <div>
-                    <h2 className="font-display text-xl font-bold">Вы</h2>
-                    <p className="text-muted-foreground">@me</p>
+                    <h2 className="font-display text-xl font-bold">{user.name}</h2>
+                    <p className="text-muted-foreground">{user.handle}</p>
                   </div>
-                  <Button variant="secondary" className="rounded-full font-semibold">Изменить</Button>
+                  <Button
+                    variant="secondary"
+                    className="rounded-full font-semibold"
+                    onClick={() => {
+                      localStorage.removeItem('nebula_user');
+                      setUser(null);
+                    }}
+                  >
+                    Выйти
+                  </Button>
                 </div>
-                <p className="mt-3 text-sm leading-relaxed">
-                  Исследую вселенную идей 🚀 Строю будущее по одному посту за раз.
-                </p>
                 <div className="mt-4 flex gap-6 text-sm">
-                  <span><b className="font-display">142</b> <span className="text-muted-foreground">постов</span></span>
-                  <span><b className="font-display">3.2K</b> <span className="text-muted-foreground">читателей</span></span>
-                  <span><b className="font-display">318</b> <span className="text-muted-foreground">читаю</span></span>
+                  <span><b className="font-display">{posts.filter((p) => p.handle === user.handle).length}</b> <span className="text-muted-foreground">постов</span></span>
+                  <span><b className="font-display">{friends.filter((f) => f.status === 'friend').length}</b> <span className="text-muted-foreground">друзей</span></span>
                 </div>
               </div>
             </div>
 
             <p className="text-sm font-semibold text-muted-foreground mt-6 mb-3 px-1">Мои посты</p>
+            {posts.filter((p) => p.handle === user.handle).length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <p className="text-4xl mb-3">✍️</p>
+                <p className="font-semibold">Постов пока нет</p>
+                <p className="text-sm mt-1">Напиши что-нибудь в ленте!</p>
+              </div>
+            )}
             <div className="space-y-5">
-              {posts.filter((p) => p.handle === '@me').length === 0 && (
-                <p className="text-center text-muted-foreground py-10">Пока пусто. Опубликуйте первый пост в ленте!</p>
-              )}
-              {posts.filter((p) => p.handle === '@me').map((post, i) => (
+              {posts.filter((p) => p.handle === user.handle).map((post, i) => (
                 <PostCard
                   key={post.id}
                   post={post}
@@ -411,7 +535,6 @@ const PostCard = ({
             </div>
           )}
 
-          {/* Reaction chips */}
           {totalReactions > 0 && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {Object.entries(post.reactions).map(([emoji, count]) => (
@@ -431,13 +554,12 @@ const PostCard = ({
             </div>
           )}
 
-          {/* Actions */}
           <div className="mt-3 flex items-center gap-6 text-muted-foreground relative">
             <button
               onClick={() => onLike(post.id)}
               className={`flex items-center gap-1.5 transition-colors ${post.liked ? 'text-destructive' : 'hover:text-destructive'}`}
             >
-              <Icon name={post.liked ? 'Heart' : 'Heart'} size={19} className={post.liked ? 'fill-current animate-pop' : ''} />
+              <Icon name="Heart" size={19} className={post.liked ? 'fill-current animate-pop' : ''} />
               <span className="text-sm">{post.likes}</span>
             </button>
 
