@@ -1,4 +1,5 @@
 {
+  "notifications": "https://functions.poehali.dev/b5ccb2a4-042d-4e75-b901-e7769954d21d",
   "posts": "https://functions.poehali.dev/bbb88fd0-5d54-4a87-827b-4d001c9c7e4e",
   "users": "https://functions.poehali.dev/b00b6a61-5be3-4ba5-9110-330d09861bc9"
 }
