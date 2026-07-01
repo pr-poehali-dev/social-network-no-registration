@@ -67,12 +67,36 @@ const suggestions = [
   { name: 'Тео Пульс', handle: '@teo', avatar: 'https://i.pravatar.cc/150?img=15' },
 ];
 
+interface Friend {
+  name: string;
+  handle: string;
+  avatar: string;
+  status: 'friend' | 'request';
+  mutual: number;
+}
+
+const initialFriends: Friend[] = [
+  { name: 'Нова Стар', handle: '@nova', avatar: 'https://i.pravatar.cc/150?img=47', status: 'friend', mutual: 12 },
+  { name: 'Марк Орбита', handle: '@orbit', avatar: 'https://i.pravatar.cc/150?img=12', status: 'friend', mutual: 8 },
+  { name: 'Лия Ветер', handle: '@lia', avatar: 'https://i.pravatar.cc/150?img=32', status: 'friend', mutual: 5 },
+  { name: 'Космо Дев', handle: '@cosmo', avatar: 'https://i.pravatar.cc/150?img=5', status: 'request', mutual: 3 },
+  { name: 'Айра Нуар', handle: '@aira', avatar: 'https://i.pravatar.cc/150?img=25', status: 'request', mutual: 1 },
+];
+
 const Index = () => {
-  const [tab, setTab] = useState<'feed' | 'search' | 'profile'>('feed');
+  const [tab, setTab] = useState<'feed' | 'search' | 'friends' | 'profile'>('feed');
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [draft, setDraft] = useState('');
   const [query, setQuery] = useState('');
   const [openReactions, setOpenReactions] = useState<number | null>(null);
+  const [friends, setFriends] = useState<Friend[]>(initialFriends);
+
+  const acceptFriend = (handle: string) => {
+    setFriends((prev) => prev.map((f) => (f.handle === handle ? { ...f, status: 'friend' } : f)));
+  };
+  const removeFriend = (handle: string) => {
+    setFriends((prev) => prev.filter((f) => f.handle !== handle));
+  };
 
   const toggleLike = (id: number) => {
     setPosts((prev) =>
@@ -259,6 +283,69 @@ const Index = () => {
           </div>
         )}
 
+        {/* FRIENDS */}
+        {tab === 'friends' && (
+          <div className="space-y-6 animate-fade-up">
+            {friends.some((f) => f.status === 'request') && (
+              <div>
+                <p className="text-sm font-semibold text-muted-foreground mb-3 px-1">
+                  Заявки в друзья · {friends.filter((f) => f.status === 'request').length}
+                </p>
+                <div className="space-y-2">
+                  {friends.filter((f) => f.status === 'request').map((f) => (
+                    <div key={f.handle} className="flex items-center justify-between rounded-2xl border border-border bg-card p-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-11 w-11">
+                          <AvatarImage src={f.avatar} />
+                          <AvatarFallback>{f.name[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold leading-tight">{f.name}</p>
+                          <p className="text-sm text-muted-foreground">{f.mutual} общих друзей</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button onClick={() => acceptFriend(f.handle)} className="rounded-full font-semibold h-9 px-4">Принять</Button>
+                        <Button onClick={() => removeFriend(f.handle)} variant="secondary" className="rounded-full font-semibold h-9 px-3">
+                          <Icon name="X" size={16} />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <p className="text-sm font-semibold text-muted-foreground mb-3 px-1">
+                Мои друзья · {friends.filter((f) => f.status === 'friend').length}
+              </p>
+              <div className="space-y-2">
+                {friends.filter((f) => f.status === 'friend').length === 0 && (
+                  <p className="text-center text-muted-foreground py-10">Пока нет друзей. Добавьте кого-нибудь!</p>
+                )}
+                {friends.filter((f) => f.status === 'friend').map((f) => (
+                  <div key={f.handle} className="flex items-center justify-between rounded-2xl border border-border bg-card p-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-11 w-11">
+                        <AvatarImage src={f.avatar} />
+                        <AvatarFallback>{f.name[0]}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-semibold leading-tight">{f.name}</p>
+                        <p className="text-sm text-muted-foreground">{f.handle} · {f.mutual} общих</p>
+                      </div>
+                    </div>
+                    <Button onClick={() => removeFriend(f.handle)} variant="secondary" className="rounded-full font-semibold h-9 px-4">
+                      Удалить
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* PROFILE */}
         {tab === 'profile' && (
           <div className="animate-fade-up">
@@ -313,6 +400,7 @@ const Index = () => {
         <div className="max-w-2xl mx-auto px-8 h-16 flex items-center justify-between">
           <NavItem icon="Home" label="Лента" active={tab === 'feed'} onClick={() => setTab('feed')} />
           <NavItem icon="Search" label="Поиск" active={tab === 'search'} onClick={() => setTab('search')} />
+          <NavItem icon="Users" label="Друзья" active={tab === 'friends'} onClick={() => setTab('friends')} />
           <NavItem icon="User" label="Профиль" active={tab === 'profile'} onClick={() => setTab('profile')} />
         </div>
       </nav>
